@@ -1,0 +1,7 @@
+{
+  "name": "{{vault_name}}",
+  "created": "{{created_date}}",
+  "vault_path": "{{vault_path}}",
+  "conventions_version": "1.0",
+  "workflow": "daily-session"
+}

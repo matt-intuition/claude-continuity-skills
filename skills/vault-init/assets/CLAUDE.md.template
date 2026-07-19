@@ -1,0 +1,76 @@
+# Obsidian Vault — Claude Workflow Instructions
+
+This is an Obsidian vault initialized for the daily-session / checkpoint / end-day workflow. Any Claude session launched inside this directory should treat these as the operating conventions.
+
+---
+
+## Layout
+
+```
+<vault-root>/
+├── local/
+│   ├── journals/              # One markdown file per day (YYYY-MM-DD.md) + _open-threads.md
+│   ├── daily-gn/              # Daily wrap-up summaries; .tracking/ holds JSONL hook output
+│   ├── ai-chats/
+│   │   ├── transcripts/       # Daily session transcripts: YYYY-MM-DD/daily-session-YYYY-MM-DD.md
+│   │   └── claude-code/       # Cross-session Claude Code export summaries
+│   ├── templates/             # Obsidian templates (Daily Journal Template.md, etc.)
+│   └── local-projects/        # Personal scratch projects
+├── .claude-vault.json         # Vault marker (read by the workflow hooks for auto-detect)
+└── CLAUDE.md                  # This file
+```
+
+All workflow content lives under `local/`. Treat that as the writable tree. Do not write workflow output anywhere else in the vault.
+
+---
+
+## Primary commands
+
+| Command | Purpose |
+|---------|---------|
+| `/daily-session` | Start a new daily session — reads previous handoff, creates today's transcript, adds an entry to the daily note. `--light` skips file creation. |
+| `/checkpoint [note]` | Timestamped checkpoint in the active transcript. Increments checkpoint count in daily note. `--archive` also exports the full conversation to `archives/`. |
+| `/daily-resume` | Read-only catch-up for a fresh window mid-day — ingests today's transcript/journal/open-threads and replies with a goal-progress table. |
+| `/end-day [--date YYYY-MM-DD]` | Wraps the session — generates Session Handoff inside the transcript, updates daily note, updates `_open-threads.md`, compiles the daily wrap-up summary. Auto-detects late-night sessions. |
+
+The full daily loop: `/daily-session` → work happens → `/checkpoint` at logical breakpoints (+ `/daily-resume` in any new window) → `/end-day`.
+
+---
+
+## Canonical references
+
+- **`local/journals/_open-threads.md`** is the source of truth for in-flight work + waiting-for asks. Update it FIRST, then let the daily journal mirror a snapshot. `/end-day` writes to this doc before finalizing the handoff.
+- **`local/templates/Daily Journal Template.md`** is the schema for a new daily journal page. The daily note for a given date should be created at `local/journals/YYYY-MM-DD.md` using this template.
+- **`local/daily-gn/.tracking/YYYY-MM-DD.jsonl`** is the accumulating accomplishment log. The `track-accomplishment.sh` hook writes to it on checkpoints, commits, file creation, and skill runs. `/end-day` reads it when compiling the daily wrap-up.
+
+---
+
+## Writing conventions
+
+- **Wikilinks** (`[[Name]]`) are the standard linking format. Use them liberally — between transcripts, between projects, into the open-threads doc, and to reference any persistent entity (project, person, concept).
+- **Dates in filenames** use ISO format: `YYYY-MM-DD`.
+- **Timestamps in transcript entries** use `~HH:MMam/pm` (with `~` prefix to indicate approximate).
+- **Frontmatter** on rolling docs (`_open-threads.md`, daily transcripts) follows the schemas embedded in those files.
+
+---
+
+## What goes where
+
+| Content | Path |
+|---------|------|
+| A thinking session for today | `local/ai-chats/transcripts/YYYY-MM-DD/daily-session-YYYY-MM-DD.md` |
+| Today's journal page | `local/journals/YYYY-MM-DD.md` |
+| Rolling threads + waiting-fors | `local/journals/_open-threads.md` |
+| Daily wrap-up summary | `local/daily-gn/YYYY-MM-DD.md` |
+| Accomplishment tracking JSONL | `local/daily-gn/.tracking/YYYY-MM-DD.jsonl` |
+| Pre-compaction snapshot | `local/ai-chats/transcripts/YYYY-MM-DD/archives/session-YYYY-MM-DD-HHMM-full.md` |
+| Cross-session Claude Code exports | `local/ai-chats/claude-code/<project>/<session>-summary.md` |
+| A personal scratch project | `local/local-projects/<project-name>/` |
+
+---
+
+## Notes for Claude sessions
+
+- The workflow hooks (`~/.config/claude-code/hooks/`) detect this vault by walking up from CWD looking for `.claude-vault.json`. If you find yourself unsure where to write, check `pwd` first — you should be inside this vault's tree.
+- If `_open-threads.md` doesn't exist when `/end-day` runs, recreate it from `~/.claude/skills/vault-init/assets/_open-threads.template.md`.
+- Never write workflow output to sibling directories outside the vault. All journal/transcript/wrap-up output stays under `local/`.
