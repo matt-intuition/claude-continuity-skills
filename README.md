@@ -51,7 +51,7 @@ Scaffolded by `/vault-init`, filled by `/onboard`, read by every command:
 
 | File | Holds | Written by |
 |---|---|---|
-| `local/journals/_foundation.md` | **Who you are and what you use** — name, timezone, platforms + MCP availability, system-of-record rules, workstream headings | `/onboard` interview; hand-edit any time |
+| `local/journals/_foundation.md` | **Who you are and what you use** — name, timezone, platforms + the exact MCP server name each capability is bound to (the per-lane auth binding), system-of-record rules, workstream headings | `/onboard` interview; hand-edit any time |
 | `local/journals/_cadence.md` | **When workflows fire** — daily/weekly/cycle/calendar/event triggers, evening verification rows | `/onboard` seeds it; hand-edit |
 | `local/journals/_JOURNAL-SYSTEM.md` | **How the rolling files work** — live windows, append-only companions, entry budgets, ownership model | scaffolded; rarely edited |
 | `.claude-vault.json` | **Which lane this is** — the vault marker CWD resolution walks up to | `/vault-init` |
@@ -81,6 +81,29 @@ Each project lane — work, side project, personal — lives in its **own vault*
 4. **No marker found → stop and ask.** Commands list the vaults on your machine that carry a marker and ask which lane the session belongs to (offering to drop a repo marker for next time). They never guess by recency and never fall through to another lane.
 
 `/vault-init` scaffolds a new lane in one step: the `local/` subtree, templates, the open-threads skeleton, the journal-system contract, the cadence skeleton, a vault-local `CLAUDE.md`, and the marker file.
+
+### Per-lane MCP auth (multi-org)
+
+Lane isolation extends to *credentials*: two lanes can be simultaneously authenticated to **different organizations of the same service** — e.g. one lane on Linear org A, another on Linear org B — with no re-auth when you switch.
+
+The pattern is **one uniquely-named, locally-scoped MCP server per org**, bound to the lane through its foundation manifest:
+
+```bash
+cd ~/work-vault        # lane A
+claude mcp add --transport http --scope local linear-org-a https://mcp.linear.app/sse
+# /mcp → authenticate to org A, then record "linear-org-a" in this lane's _foundation.md
+
+cd ~/client-vault      # lane B
+claude mcp add --transport http --scope local linear-org-b https://mcp.linear.app/sse
+# /mcp → authenticate to org B, then record "linear-org-b" in this lane's _foundation.md
+```
+
+The foundation's platforms table names the exact server each capability uses, and the commands call **only** that server — if it isn't connected in the session, the capability's fallback runs and the gap is reported; another lane's same-service server is never substituted. `/onboard` walks you through this setup when it detects a multi-org situation.
+
+Three things to know:
+- **Local scope is per launch directory.** If a lane is launched from both its vault and a linked project repo, add the server in each directory — or commit a `.mcp.json` to the repo (project scope). API-key-based servers with a per-repo `${VAR}` in `.mcp.json` and a gitignored `.env` achieve the same isolation without OAuth.
+- **Don't reuse one server name across orgs.** Two lanes OAuth-ing the same name (`linear`) into different orgs relies on undocumented token-isolation behavior — the org-named pattern avoids it entirely.
+- **Account-level connectors can't be lane-split.** claude.ai-hosted connectors follow your Claude account everywhere; record them as `account-level` in the foundation and expect the same identity in every lane.
 
 ## Prerequisites
 

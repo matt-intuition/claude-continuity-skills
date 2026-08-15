@@ -26,7 +26,7 @@ This means running `/end-day` at 1am on 12/17 will correctly find and complete t
 
 ## Foundation gate
 
-After resolving the vault (step 0), read `local/journals/_foundation.md`. Steps marked **[gated: <capability>]** run only when the foundation declares that capability with a connected MCP; otherwise use the stated fallback. The foundation also supplies the **workstream headings** (step 5d) and the **share-out channel** the daily wrap-up draft is formatted for. No foundation file → vault-only behavior throughout.
+After resolving the vault (step 0), read `local/journals/_foundation.md`. Steps marked **[gated: <capability>]** run only when the foundation declares that capability with a connected MCP; otherwise use the stated fallback. **Server binding:** call tools only from the MCP server the platforms table names for each capability (lanes may be authed to different orgs of the same service); a named-but-unconnected server means the capability is unavailable — run the fallback, and mark affected claims `unverified — <server> not connected` rather than verifying against another lane's server. The foundation also supplies the **workstream headings** (step 5d) and the **share-out channel** the daily wrap-up draft is formatted for. No foundation file → vault-only behavior throughout.
 
 ## What This Command Does
 

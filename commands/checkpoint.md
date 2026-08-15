@@ -11,7 +11,7 @@ Create a timestamped checkpoint in the current daily session transcript.
 
 ## Foundation gate
 
-After resolving the vault (step 0), read `local/journals/_foundation.md`. Steps marked **[gated: <capability>]** run only when the foundation declares that capability with a connected MCP; otherwise use the stated fallback. No foundation file → vault-only behavior throughout.
+After resolving the vault (step 0), read `local/journals/_foundation.md`. Steps marked **[gated: <capability>]** run only when the foundation declares that capability with a connected MCP; otherwise use the stated fallback. **Server binding:** call tools only from the MCP server the platforms table names for each capability (lanes may be authed to different orgs of the same service); a named-but-unconnected server means the capability is unavailable — run the fallback and report it, never substitute another lane's server. No foundation file → vault-only behavior throughout.
 
 ## What This Command Does
 

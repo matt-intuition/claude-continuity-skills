@@ -19,17 +19,23 @@ The centralized configuration every workflow command reads right after resolving
 
 ## Platforms & sources of truth
 
-<!-- Tool column: name the product you actually use, or `none`. MCP column: yes / no.
+<!-- Tool column: name the product you actually use, or `none`.
+     MCP server column: the EXACT server name this lane's tools come from (as shown in /mcp), e.g.
+     `linear`, `linear-org-a`. This is the per-vault auth binding — a lane authed to org A names
+     `linear-org-a`; a sibling lane names `linear-org-b`. Write `none` for no MCP, or
+     `account-level` for connectors that follow your account everywhere (claude.ai-hosted).
      The system-of-record rule is what /end-day's verification gate enforces for that claim type. -->
 
-| Capability | Tool | MCP connected? | System-of-record rule |
+| Capability | Tool | MCP server | System-of-record rule |
 |---|---|---|---|
-| Task tracker | <!-- Linear / Jira / GitHub Issues / none --> | | Ticket status is verified against the tracker, fetched live — never from session prose |
+| Task tracker | <!-- Linear / Jira / GitHub Issues / none --> | <!-- e.g. linear-org-a --> | Ticket status is verified against the tracker, fetched live — never from session prose |
 | Email | <!-- Gmail / none --> | | "Sent" claims are verified against **sent mail**, never the drafts folder |
 | Calendar | <!-- Google Calendar / none --> | | Today's events feed cadence evaluation and the day's plate |
 | Docs / knowledge base | <!-- Notion / Google Docs / vault-only --> | | Durable docs and counts are verified by querying the platform |
 | CRM | <!-- HubSpot / none --> | | Deal/relationship stages are verified against the CRM, fetched live |
-| Share-out channel | <!-- Slack / Discord / email / none --> | n/a | The daily wrap-up's share draft is formatted for this channel |
+| Share-out channel | <!-- Slack / Discord / email / none --> | | The daily wrap-up's share draft is formatted for this channel |
+
+**Server binding rule:** commands call tools ONLY from the server named in this table. If that server isn't connected in the current session, the capability counts as unavailable (the step's fallback runs and the gap is reported) — a same-service server belonging to another lane is never a substitute.
 
 ## Cadence ceremonies
 

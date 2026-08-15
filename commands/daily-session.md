@@ -46,6 +46,7 @@ Light mode skips:
 After resolving the vault (step 0), read the **foundation manifest** at `local/journals/_foundation.md`. It declares the user's name, timezone, platforms (task tracker, email, calendar, docs, CRM, share-out channel), whether each has a working MCP connector, and the workstream headings.
 
 - Steps marked **[gated: <capability>]** run only when the foundation declares that capability with a connected MCP. Otherwise run the step's stated fallback — never error, never call an undeclared tool.
+- **Server binding:** the platforms table names the exact MCP server each capability uses (e.g. `linear-org-a` — lanes may be authed to different orgs of the same service). Call tools ONLY from that named server. If the named server isn't connected in this session, treat the capability as unavailable: run the fallback and say so in the greeting — never substitute a same-service server bound to another lane.
 - **No foundation file →** treat every capability as absent, run the vault-only path throughout, and suggest `/onboard` once in the greeting ("run `/onboard` to connect your task tracker, email, and calendar to this workflow").
 - Address the user by the name the foundation declares; timestamps use the foundation's timezone.
 

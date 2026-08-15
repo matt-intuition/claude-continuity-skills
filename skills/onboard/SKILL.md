@@ -35,7 +35,7 @@ Walk up from CWD for `.claude-vault.json` (same algorithm as every workflow comm
 
 ### 2. Detect available MCP connectors
 
-Inspect which MCP tools are actually present in this session (tool listings / a tool search for the common servers — Linear, Jira, GitHub, Gmail, Google Calendar, Notion, Google Drive, HubSpot, Slack). Build a short detected-list. Do not call any of them yet — presence is enough. Note that MCP servers configured on the user's account but not loaded in this session may not appear; the user can override detection.
+Inspect which MCP tools are actually present in this session (tool listings / a tool search for the common servers — Linear, Jira, GitHub, Gmail, Google Calendar, Notion, Google Drive, HubSpot, Slack). Build a short detected-list **with the exact server names** (the prefix in the tool names, e.g. `linear-server`, `linear-org-a`) — the foundation records the name, not just the product. Do not call any of them yet — presence is enough. Note that MCP servers configured on the user's account but not loaded in this session may not appear; the user can override detection.
 
 ### 3. Interview — identity
 
@@ -54,7 +54,16 @@ Present one capability table, pre-filled from step 2, and confirm/correct each r
 | CRM | Deal/relationship stage verification | HubSpot · none |
 | Share-out channel | The format of the daily wrap-up's copy-paste draft | Slack · Discord · email · none |
 
-For each declared platform, also confirm the MCP status (connected / planned / manual-only). A platform the user uses but has no MCP for is recorded as `MCP: no` — commands will treat claims against it as `unverified` rather than silently skipping the concept.
+For each declared platform, record the **MCP server name** this lane should use (from the step-2 detected list, or `none` / `account-level`). A platform the user uses but has no MCP for is recorded as `none` — commands will treat claims against it as `unverified` rather than silently skipping the concept.
+
+**Multi-org check (per-vault auth):** ask whether any declared service spans more than one organization/workspace across the user's lanes (e.g. Linear org A for work, Linear org B for a client). If yes, walk them through the isolation pattern before writing the table:
+
+1. From this vault (or the project repo the lane launches from), add a **locally-scoped, org-named server**:
+   `claude mcp add --transport http --scope local linear-<org> https://mcp.linear.app/sse`
+2. Run `/mcp` and complete that org's OAuth flow once.
+3. Record `linear-<org>` in this lane's foundation table; the sibling lane repeats with its own name.
+
+Two caveats to state: local scope is **per launch directory** — a lane started from both its vault and a linked repo needs the server added in each (or a `.mcp.json` committed to the repo); and claude.ai-hosted account connectors follow the account everywhere, so they cannot be org-split per lane — record those as `account-level`. Never rely on two lanes OAuth-ing the *same* server name into different orgs; token isolation for that case is undocumented.
 
 Briefly state the consequence of each choice as it's made ("no task tracker → your morning plate builds from open-threads and yesterday's handoff instead").
 
@@ -75,10 +84,12 @@ Ask for 2–5 stable workstream headings for the daily wrap-up's tracking layer 
 
 Close with a concrete readout of what the configuration means — one line per command, derived from the actual declarations, e.g.:
 
+Verify the bindings as part of the readout: for each declared MCP server name, confirm it is actually connected in this session and flag any that aren't ("`linear-org-b` is named but not connected here — run `claude mcp add --scope local` from this directory").
+
 ```
 With this setup:
-- /daily-session will pull your morning plate from Jira, scan Gmail for signal mail,
-  and check Google Calendar for meeting-driven cadence rows.
+- /daily-session will pull your morning plate from Jira (server: jira-acme), scan Gmail
+  for signal mail, and check Google Calendar for meeting-driven cadence rows.
 - /checkpoint will sync ticket status to Jira and verify "sent" claims against Gmail sent mail.
 - /end-day will format your daily wrap-up share draft for Discord, grouped under:
   Product · Customers · Ops/Other.
