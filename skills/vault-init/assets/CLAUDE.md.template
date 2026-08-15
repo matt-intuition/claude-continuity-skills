@@ -9,7 +9,7 @@ This is an Obsidian vault initialized for the daily-session / checkpoint / end-d
 ```
 <vault-root>/
 ├── local/
-│   ├── journals/              # One markdown file per day (YYYY-MM-DD.md) + _open-threads.md
+│   ├── journals/              # One file per day (YYYY-MM-DD.md) + the rolling system files (below)
 │   ├── daily-gn/              # Daily wrap-up summaries; .tracking/ holds JSONL hook output
 │   ├── ai-chats/
 │   │   ├── transcripts/       # Daily session transcripts: YYYY-MM-DD/daily-session-YYYY-MM-DD.md
@@ -39,6 +39,9 @@ The full daily loop: `/daily-session` → work happens → `/checkpoint` at logi
 
 ## Canonical references
 
+- **`local/journals/_foundation.md`** is the foundation manifest — the user's name, timezone, declared platforms (task tracker, email, calendar, docs, CRM, share-out channel), cadence ceremonies, and workstream headings. Every command reads it right after resolving the vault; steps gated on an undeclared capability fall back to vault-only behavior. Written by `/onboard`; edit by hand any time.
+- **`local/journals/_JOURNAL-SYSTEM.md`** is the architecture contract for all rolling files (live windows, append-only companions, entry budgets, required `detail:` pointers, write-hot/reconcile-cold ownership).
+- **`local/journals/_cadence.md`** is the trigger → workflow dispatcher: `/daily-session` proposes matching runs each morning, `/end-day` verifies the evening rows.
 - **`local/journals/_open-threads.md`** is the source of truth for in-flight work + waiting-for asks. Update it FIRST, then let the daily journal mirror a snapshot. `/end-day` writes to this doc before finalizing the handoff.
 - **`local/templates/Daily Journal Template.md`** is the schema for a new daily journal page. The daily note for a given date should be created at `local/journals/YYYY-MM-DD.md` using this template.
 - **`local/daily-gn/.tracking/YYYY-MM-DD.jsonl`** is the accumulating accomplishment log. The `track-accomplishment.sh` hook writes to it on checkpoints, commits, file creation, and skill runs. `/end-day` reads it when compiling the daily wrap-up.
@@ -61,6 +64,7 @@ The full daily loop: `/daily-session` → work happens → `/checkpoint` at logi
 | A thinking session for today | `local/ai-chats/transcripts/YYYY-MM-DD/daily-session-YYYY-MM-DD.md` |
 | Today's journal page | `local/journals/YYYY-MM-DD.md` |
 | Rolling threads + waiting-fors | `local/journals/_open-threads.md` |
+| Platform + cadence configuration | `local/journals/_foundation.md` + `local/journals/_cadence.md` |
 | Daily wrap-up summary | `local/daily-gn/YYYY-MM-DD.md` |
 | Accomplishment tracking JSONL | `local/daily-gn/.tracking/YYYY-MM-DD.jsonl` |
 | Pre-compaction snapshot | `local/ai-chats/transcripts/YYYY-MM-DD/archives/session-YYYY-MM-DD-HHMM-full.md` |

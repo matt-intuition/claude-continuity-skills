@@ -28,7 +28,9 @@ Creates this structure at the target vault root (default: CWD):
 <vault>/
 ├── local/
 │   ├── journals/
-│   │   └── _open-threads.md          # Rolling threads doc (skeleton, no personal threads)
+│   │   ├── _open-threads.md          # Rolling threads doc (skeleton, no personal threads)
+│   │   ├── _JOURNAL-SYSTEM.md        # The architecture contract for all rolling files
+│   │   └── _cadence.md               # Trigger → workflow dispatcher (empty skeleton; /onboard seeds it)
 │   ├── daily-gn/
 │   │   └── .tracking/                # JSONL accomplishment tracking (hook writes here)
 │   ├── ai-chats/
@@ -65,6 +67,8 @@ What the script creates:
 - All directories listed above (`mkdir -p`)
 - `local/templates/Daily Journal Template.md` — copied from `~/.claude/skills/vault-init/assets/Daily Journal Template.md`
 - `local/journals/_open-threads.md` — copied from `assets/_open-threads.template.md` with today's date filled into the `last_updated` frontmatter
+- `local/journals/_JOURNAL-SYSTEM.md` — the architecture contract, from `assets/_JOURNAL-SYSTEM.template.md`
+- `local/journals/_cadence.md` — empty dispatcher skeleton, from `assets/_cadence.template.md` (`/onboard` fills it from the interview)
 - `CLAUDE.md` — copied from `assets/CLAUDE.md.template`
 - `.claude-vault.json` — copied from `assets/.claude-vault.json.template` with `name`, `created`, and `vault_path` filled in
 
@@ -88,9 +92,10 @@ Tell the user:
 - The path to `_open-threads.md` — they should review and populate it before their first `/end-day` runs
 - That Obsidian will create its own `.obsidian/` config the first time they open the dir as a vault
 
-### 5. Offer a first-run
+### 5. Offer onboarding + a first-run
 
-Ask: "Want me to run `/daily-session --light` now to verify the workflow is wired up?" — light mode skips file creation but exercises the read path, confirming the vault is detected.
+- If `local/journals/_foundation.md` doesn't exist yet, suggest `/onboard` next: "Run `/onboard` to tell the workflow which platforms you use (task tracker, email, calendar, docs, CRM, share-out channel) and your cadence ceremonies — it writes `_foundation.md` and seeds `_cadence.md`. Until then, the commands run in vault-only mode."
+- Ask: "Want me to run `/daily-session --light` now to verify the workflow is wired up?" — light mode skips file creation but exercises the read path, confirming the vault is detected.
 
 ## File details
 
@@ -110,6 +115,14 @@ Tells any Claude session launched in this vault:
 - `/daily-session`, `/checkpoint`, `/end-day` are the primary commands
 - The `_open-threads.md` doc is the source of truth for in-flight work
 - Wikilinks (`[[name]]`) are the linking convention
+
+### `_JOURNAL-SYSTEM.md`
+
+The architecture contract for the rolling journal files: live windows + append-only companions ("move, never delete"), required `detail:` pointers, the ~6-line entry budget, and the write-hot/reconcile-cold ownership model (`/checkpoint` authors records, `/end-day` reconciles and rolls). Every rolling file's header links to it.
+
+### `_cadence.md` skeleton
+
+The trigger → workflow dispatcher `/daily-session` evaluates each morning and `/end-day` verifies each evening. Scaffolded empty (structure + commented examples only); `/onboard` seeds rows from the cadence-ceremonies interview.
 
 ### `.claude-vault.json`
 
