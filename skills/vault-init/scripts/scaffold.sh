@@ -102,8 +102,13 @@ echo
 
 write_file "$ASSETS_DIR/Daily Journal Template.md"  "$VAULT_PATH/local/templates/Daily Journal Template.md"
 write_file "$ASSETS_DIR/_open-threads.template.md"  "$VAULT_PATH/local/journals/_open-threads.md"
+write_file "$ASSETS_DIR/_JOURNAL-SYSTEM.template.md" "$VAULT_PATH/local/journals/_JOURNAL-SYSTEM.md"
+write_file "$ASSETS_DIR/_cadence.template.md"       "$VAULT_PATH/local/journals/_cadence.md"
 write_file "$ASSETS_DIR/CLAUDE.md.template"         "$VAULT_PATH/CLAUDE.md"
 write_file "$ASSETS_DIR/.claude-vault.json.template" "$VAULT_PATH/.claude-vault.json"
+
+# _foundation.md is deliberately NOT scaffolded here — /onboard writes it from
+# the interview. The commands degrade to vault-only behavior until it exists.
 
 # ---------------------------------------------------------------------------
 # .gitignore for the vault (so future git init doesn't track tracking JSONL etc.)
@@ -132,4 +137,5 @@ echo
 echo "Next:"
 echo "  - Verify auto-detect:    bash -c 'source \"\$HOME/.config/claude-code/hooks/lib/config.sh\" && get_vault_path \"$VAULT_PATH\"'"
 echo "  - Expected output:       $VAULT_PATH/local"
+echo "  - Configure platforms:   /onboard   (writes local/journals/_foundation.md)"
 echo "  - First daily session:   /daily-session --light"

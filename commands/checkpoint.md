@@ -9,6 +9,10 @@ Create a timestamped checkpoint in the current daily session transcript.
 - `/checkpoint [note]` - Create checkpoint with specific note/context
 - `/checkpoint --archive` - Also archive the full conversation to `archives/` (heavier; off by default)
 
+## Foundation gate
+
+After resolving the vault (step 0), read `local/journals/_foundation.md`. Steps marked **[gated: <capability>]** run only when the foundation declares that capability with a connected MCP; otherwise use the stated fallback. No foundation file → vault-only behavior throughout.
+
 ## What This Command Does
 
 0. **Resolve the active vault — CWD-first, hard-scoped.** Walk **up** from the current working directory looking for a `.claude-vault.json` marker (CWD, then each parent, stopping at `$HOME`); its `vault_path` is the **ACTIVE VAULT**. Every `local/...` path in this command is relative to `<VAULT>`, not the shell CWD. Lanes are mutually exclusive — never write a checkpoint into another vault's transcript. **No marker found → STOP and ask** which lane's vault this session belongs to (offer to drop a repo marker); never guess by recency.
@@ -39,17 +43,40 @@ Create a timestamped checkpoint in the current daily session transcript.
    - Increment the checkpoint count (e.g., `*(2 checkpoints)*` → `*(3 checkpoints)*`)
    - Add a nested bullet with deep link to the checkpoint section
 
-5b. **Task-tracker sync (optional)** — if you track work in an external tool (Linear, Jira, GitHub Issues, etc.):
+5a2. **Append to the rolling Artifact Log** (`local/journals/_artifact-log.md`) — the recall index:
+   - Walk this checkpoint's **Key Activities** Created/Modified lines. For each entry that is a **durable deliverable**, append a row to the table (newest-first, so insert directly under the header row).
+   - **Row shape:** `| YYYY-MM-DD | Artifact name | Type | Where | What it's for | Ticket |`
+     - **Type:** name the artifact's home per the foundation's docs platform — e.g. `Notion` · `Vault` · `Deck` · `Doc` (combine when one artifact has two homes, e.g. `Vault + Notion`).
+     - **Where:** the vault-relative path, and/or a markdown link to the external page. Keep URLs inside `[link](url)` so rows stay readable.
+     - **What it's for:** one clause, **<=15 words**, that makes it findable three weeks later when the user remembers the problem but not the filename. This is the load-bearing column — never leave it generic, and never let it grow into a summary. **The row is a pointer, not a summary** — the artifact holds its own detail; narrative paragraphs in rows kill the table's read-every-morning economics.
+     - **Ticket:** the tracker ID from step 5b, or `—`.
+   - **What counts:** external doc pages, vault docs/memos/write-ups, decks and presentations, durable logs and registries **on creation**, skills and commands, research packs and one-pagers.
+   - **What doesn't:** transcripts, daily journals, `_open-threads.md` hygiene edits, tracker/CRM/database rows, code and tooling, individual message drafts. Rolling logs get a row on creation and on a substantive batch append — not on every touch.
+   - **The filter is the point:** if the user would go looking for it three weeks later, it goes in; if it's session bookkeeping, it doesn't. Logging everything turns this into a git log and kills its recall value.
+   - A checkpoint with no durable deliverables appends nothing — that's a normal outcome, not a miss.
+   - If the file doesn't exist, create it from the vault-init skeleton. Roll-off past 21 days is `/end-day`'s job, never this command's.
+
+5a3. **Open-threads record sync — write while hot** (`local/journals/_open-threads.md` + `_open-threads-changelog.md`). Records are written at the checkpoint, while the quotes, rationale, and outcomes are still in context — never parked "for /end-day", whose cold-context authoring is the workflow's most repeated defect source. Contract: the files' own headers + `local/journals/_JOURNAL-SYSTEM.md`.
+   - **Scope: ONLY threads this stretch of work touched** (typically 1-3). Never rewrite the whole board — full-board reconciliation is /end-day's job. This scoping also keeps parallel windows from colliding: each window edits only the threads it worked; the changelog is append-only and safe.
+   - For each touched thread, a **two-layer write**:
+     - **Live entry** (`_open-threads.md`): update the state block in place — state, dates, `next:`, `nudge if:` — keeping it within the ~6-line schema in the file header. New threads get a new state block in the right section, **including the required `detail:` pointer**.
+     - **Narrative** (`_open-threads-changelog.md`): append the substance — what happened, quotes, rationale, why-it-matters — under today's `## YYYY-MM-DD` header (create it if this is the day's first write; newest day first) with a `### <thread name>` subheader. This is prose the checkpoint summary would have contained anyway; it lives in the changelog so the live doc stays at index altitude.
+   - **Waiting For resolutions land NOW:** a reply arrived, a send was verified, an ask was answered → update the WF entry + changelog note at this checkpoint, not at midnight.
+   - **Closures land NOW:** a thread that finished moves to `_open-threads-archive.md` (stamped `closed: YYYY-MM-DD`) at the checkpoint that closed it.
+   - A checkpoint that touched no tracked threads writes nothing here — normal outcome, not a miss.
+   - Record-keeping follow-through is pre-authorized — just do it and summarize in the checkpoint reply. Outward-facing sends still get surfaced first.
+
+5b. **Task-tracker ticket sync [gated: task tracker] (ticket-first rule):**
    - Identify the ticket(s) this checkpoint's work belongs to: the ticket IDs recorded next to Session Goals in the transcript (written by `/daily-session` step 4d), plus any IDs named in the checkpoint note or open-threads.
    - **Status (auto):** any linked ticket still in Todo/Backlog whose work just started → flip to In Progress. Status flips are pre-authorized; just report them.
    - **Comments (draft + approve):** for each linked ticket where this checkpoint represents knowledge-worthy movement (decision, deliverable, blocker, scope change — not routine progress), draft a one-to-three-line comment. Present all drafts in one batch for approval; post only what the user approves. Skip drafting entirely for minor increments — /end-day's sweep will catch the day's narrative.
-   - **Unticketed work check:** if this checkpoint's work maps to NO known ticket and wasn't designated no-ticket at session start, flag it in the chat reply ("this work has no ticket — create one?") and offer creation (project + title + estimate). Record a no-ticket designation if the user declines, so it isn't re-flagged.
-   - Skip this step silently if no tracker integration is configured.
+   - **Unticketed work check:** if this checkpoint's work maps to NO known ticket and wasn't designated no-ticket at session start, flag it in the chat reply ("this work has no ticket — create one?") and offer creation (team/project + title + estimate). Record a no-ticket designation if the user declines, so it isn't re-flagged.
+   - **No task tracker declared →** skip this step; the open-threads sync (5a3) is the tracking layer.
 
 6. **Always reply with a goal-progress table (chat only):**
    - After the file writes are done, end the response with a table showing how the day is tracking against today's goals. This is a **chat reply only** — do NOT write it into the transcript or daily note.
    - Source the goals from today's daily journal `## Start of Day Reflections` → **Today's Focus** list (`local/journals/YYYY-MM-DD.md`). If that list is empty/missing, fall back to the owned items in `local/journals/_open-threads.md` (or the session's stated goals) and note that you did so.
-   - Reason over the session so far + task-tracker state to assign each goal a status. Keep one row per goal, in the original order.
+   - Reason over the session so far + declared systems of record to assign each goal a status. Keep one row per goal, in the original order.
    - See **Goal Progress Table** format below. Always include this, whether or not a `[note]` argument was passed.
 
 ## Checkpoint Entry Format (Transcript)
@@ -90,8 +117,7 @@ The nested bullet under the session entry should follow this format:
 
 **Good examples:**
 - `Config fix complete, rich transcript template with [[YAML]] frontmatter`
-- `Created [[Personal World Model PRD]], researched [[knowledge graph]] architecture`
-- `[[Project A]] transaction queue implementation, [[XState]] machine setup`
+- `Created [[Product PRD]], researched [[knowledge graph]] architecture`
 
 **Bad examples:**
 - `.../transaction-executor/transaction-...` (truncated file path)
@@ -118,16 +144,24 @@ Here's where the day's goals stand:
 ```
 
 **Status conventions:**
-- ✅ **Done** — completed and verified this session (cite the ticket/artifact, e.g. `TICKET-123`)
+- ✅ **Done** — completed and verified this session (cite the ticket/artifact)
 - 🔄 **In progress** — actively moving, has a ticket/draft behind it (cite it)
 - ⏳ **Not started** — no movement yet today
 - 🚧 **Blocked** — waiting on someone/something (name it)
 - ➕ **Bonus** — meaningful work done that wasn't one of the morning goals (optional extra rows at the bottom)
 
+**⛔ Verification gate — run before assigning any status.**
+
+**Every ✅ Done and every ⏳ Not started must be verified against the system of record the foundation declares for that claim type, not recalled from the session.** Sent mail for email sends (e.g. `in:sent after:YYYY/MM/DD`), the task tracker fetched now for ticket state, the declared docs/CRM platform for counts and stages, an actual file read for artifacts. **The absence of a draft is not evidence of a send, and the presence of one is not evidence of a non-send.** A claim type with no declared system of record is written as `unverified` with the reason.
+
+This is the most repeated defect in this workflow and it runs in *both* directions — work marked outstanding that was finished hours earlier, and work marked done that only ever reached draft. Prose compresses in whichever direction the writer's last memory points. A row you cannot verify is written as `unverified` with the reason, which is always better than a confident wrong one.
+
+**Highest-risk category: anything you did not personally do** — a parallel window, a subagent, an earlier checkpoint in the same session. Verify before repeating it. Two windows once produced contradictory goal tables at the same timestamp because one read the other's prose instead of the tracker.
+
 **Guidelines:**
 - One row per Today's Focus goal, preserving their original order and wording (compress long goals to a short label).
 - Be honest — don't mark something Done unless it actually is. Half-done → 🔄 with what's left.
-- Keep notes terse (a ticket ID, a one-clause status). Tie to your task tracker where there's a record.
+- Keep notes terse (a ticket ID, a one-clause status). Tie to the tracker/docs platform where there's a record.
 - End with a single summary line (the tally) so progress is legible in one glance.
 
 ## Alignment with PreCompact Hook
@@ -148,10 +182,10 @@ The header distinction (`Checkpoint` vs `Checkpoint (Pre-Compaction)`) makes it 
 ## Wiki-Link Integration
 
 Use [[wiki-links]] liberally for:
-- Projects: [[Project A]], [[Claude Code Daily Session]]
-- Technologies: [[Python]], [[Bash]], [[TypeScript]], [[XState]]
+- Projects: [[Your Project]], [[Claude Code Daily Session]]
+- Technologies: [[Python]], [[Bash]], [[TypeScript]]
 - Concepts: [[knowledge graph]], [[world model]], [[dogfooding]]
-- Tools: [[Obsidian]], [[Claude Code]], [[pgvector]]
+- Tools: [[Obsidian]], [[Claude Code]]
 - Your notes: [[PRD]], [[Research Notes]]
 
 ## Tracking Integration
@@ -187,13 +221,12 @@ Finished knowledge graph PRD and research integration. [[local/ai-chats/transcri
 
 **Key Activities:**
 - Created: `Personal World Model PRD.md` ([[Markdown]])
-- Read: [[ai-experiments-knowledge-graph-for-agents]] (research export)
-- Read: [[Research Notes]]
+- Read: [[knowledge-graph-for-agents]] (research export)
 
 **Summary:**
 - Created [[Personal World Model PRD]] with three-phase architecture
 - Integrated prior research on [[knowledge graph]] / [[world model]]
-- Validated cross-tool workflow: research → Web Clipper → Obsidian → Claude Code
+- Validated cross-tool workflow: research → Obsidian → Claude Code
 
 ---
 ```
