@@ -1,8 +1,13 @@
 ---
 disable-model-invocation: true
+model: opus
 ---
 
 Create a timestamped checkpoint in the current daily session transcript.
+
+## Model & cost note
+
+`/checkpoint` fires when session context is at its largest and re-sends that full context on every tool round-trip, which makes it one of the most expensive commands in the workflow — yet everything in it is procedural writing plus verification against systems of record, not frontier reasoning. The `model:` frontmatter pins execution to a strong-but-cheaper model; the checkpoint's fidelity comes from the session context, which the override does not change. Adjust the pin to taste.
 
 ## Command Usage
 - `/checkpoint` - Create checkpoint with auto-generated summary
@@ -157,6 +162,16 @@ Here's where the day's goals stand:
 This is the most repeated defect in this workflow and it runs in *both* directions — work marked outstanding that was finished hours earlier, and work marked done that only ever reached draft. Prose compresses in whichever direction the writer's last memory points. A row you cannot verify is written as `unverified` with the reason, which is always better than a confident wrong one.
 
 **Highest-risk category: anything you did not personally do** — a parallel window, a subagent, an earlier checkpoint in the same session. Verify before repeating it. Two windows once produced contradictory goal tables at the same timestamp because one read the other's prose instead of the tracker.
+
+**How to run the lookups (evidence-collection protocol):**
+
+1. **Compose an evidence checklist first.** From the day's goals, touched threads, and linked tickets, list every item needing verification with its exact source: the sent-mail query (`in:sent after:YYYY/MM/DD <recipient/subject>`), the tracker ticket ID, the docs/CRM page. Precision here is load-bearing — the checklist is the handoff.
+2. **Delegate the remote lookups to ONE subagent** (general-purpose; pick a strong model — MCP query construction is where this silently goes wrong) carrying the full checklist. One large-batch agent, never one per lookup. Its brief: run every lookup (parallelize where possible) against the foundation-declared servers and return a compact evidence table — item | source + exact query used | raw finding (message ID, timestamp, status field, stage name). **"No results for query X" is itself a finding and must be reported as such, never omitted.**
+3. **The subagent returns evidence, never verdicts.** Status assignment (✅/🔄/⏳/🚧) happens back here, in full session context, by applying the gate rules to the evidence table. Ambiguous evidence → re-query in-context before assigning; still ambiguous → `unverified` with the reason.
+4. **Fallback, never skip:** if the subagent fails or an MCP is unreachable from it, run the same checklist in-context with the lookups batched in parallel (one block, not sequential). The gate is never skipped and never downgraded to session memory.
+5. **Local file reads stay in-context** (artifact existence, transcript state) — they're cheap and need no hop.
+
+Why delegate: the lookups' raw payloads (mail search results, tracker JSON) otherwise enter the main conversation and are re-billed by every subsequent turn of the session — the subagent keeps them permanently out of context, which also delays compaction. Vault-only foundations (no remote MCPs declared) skip the subagent entirely; file reads are the whole gate.
 
 **Guidelines:**
 - One row per Today's Focus goal, preserving their original order and wording (compress long goals to a short label).
